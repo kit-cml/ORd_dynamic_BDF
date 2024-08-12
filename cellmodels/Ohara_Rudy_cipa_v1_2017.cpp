@@ -12,6 +12,7 @@
 #include "../modules/glob_funct.hpp"
 #include <cuda_runtime.h>
 #include <cuda.h>
+#include <thrust/device_vector.h>
 
 /*
  * TIME is time in component environment (millisecond).
@@ -1437,20 +1438,25 @@ __device__ void numericalJacobian(double time, double *y, double **jac, double e
 __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, int offset){
   // Initialize solution
   const int num_of_states = 49;
+  double y[num_of_states] = {0}; 
+  double y_new[num_of_states] = {0};
+  double F[num_of_states] = {0}; 
+  double delta[num_of_states] = {0};
 
-  double y[num_of_states];
-  double y_new[num_of_states];
   for (int i = 0; i < num_of_states; ++i) {
       y[i] = STATES[(num_of_states * offset) + i];
   }
+  if (offset == 0 )printf("input states to y\n");
   // Newton-Raphson method variables
-  double F[num_of_states];
-  double **Jc = new double*[num_of_states];
-  double Jcf[num_of_states * num_of_states]; // flatten of Jc
+  // double **Jc = new double*[num_of_states]; //jacobian
+  thrust::device_vector<double> Jc(num_of_states * num_of_states, 0.0);
+  double Jcf[num_of_states * num_of_states] = {0};  // flatten of Jc
+
   for (int i = 0; i < num_of_states; i++){
     Jc[i] = new double[num_of_states];
   }
-  double delta[num_of_states];
+
+  if (offset == 0)printf("newton raphson done\n");
   // Initial guess
   for (int i = 0; i < num_of_states; ++i) {
     y_new[i] = y[i]; // Initial guess
@@ -1465,7 +1471,7 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
     }
     // jacobian(y_new, J); // or use numericalJacobian(y_new, J)
     // numericalJacobian(time,y_new,Jc,epsilon,data); 
-    numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
+    numericalJacobian(time, y_new, thrust::raw_pointer_cast(Jc.data()), epsilon, CONSTANTS, ALGEBRAIC, offset);
 
     for (int i = 0; i < num_of_states; ++i) {
       for (int j = 0; j < num_of_states; ++j) {
@@ -1474,6 +1480,7 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
     }
     
     ___gaussElimination(Jcf,F,delta,num_of_states);
+    if (offset == 0)printf("gauss in newton raphson loop\n");
     for (int i = 0; i < num_of_states; ++i) {
       y_new[i] -= delta[i];
     }
