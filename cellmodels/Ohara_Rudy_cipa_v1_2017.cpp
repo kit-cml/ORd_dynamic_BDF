@@ -1411,96 +1411,181 @@ __device__ double set_time_step (double TIME, double time_point, double max_time
 //   }
 // }
 
-__device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset){
-  const int num_of_states = 49;
+// __device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset){
+//   const int num_of_states = 49;
 
-  double g0[num_of_states]; // to store rates
-  // rhs_fn(time,y,g0,data);
-  // data->computeRates(time,data->CONSTANTS,g0,y,data->ALGEBRAIC); 
-  computeRates( time, CONSTANTS, g0, y, ALGEBRAIC, offset );
-  for (int j = 0; j < num_of_states; ++j) {
-    double y_perturbed[num_of_states];
-    for (int k = 0; k < num_of_states; ++k) {
-        y_perturbed[k] = y[k];
-    }
-    y_perturbed[j] += epsilon; // y(i+1) - y(i) = epsilon * y(i)
-    double g_perturbed[num_of_states]; // to store rates
-    // rhs_fn(time,y_perturbed,g_perturbed,data);
-    // data->computeRates(time,data->CONSTANTS,g_perturbed,y_perturbed,data->ALGEBRAIC);
-    computeRates( time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset );
-    for (int i = 0; i < num_of_states; ++i) {
-      jac[i][j] = (g_perturbed[i] - g0[i]) / (epsilon); // dg/dy = ( g(y(i+1)) - g(y(i)) ) / ( epsilon * y(i) ) 
-    }
-  }
+//   double g0[num_of_states]; // to store rates
+//   // rhs_fn(time,y,g0,data);
+//   // data->computeRates(time,data->CONSTANTS,g0,y,data->ALGEBRAIC); 
+//   computeRates( time, CONSTANTS, g0, y, ALGEBRAIC, offset );
+//   for (int j = 0; j < num_of_states; ++j) {
+//     double y_perturbed[num_of_states];
+//     for (int k = 0; k < num_of_states; ++k) {
+//         y_perturbed[k] = y[k];
+//     }
+//     y_perturbed[j] += epsilon; // y(i+1) - y(i) = epsilon * y(i)
+//     double g_perturbed[num_of_states]; // to store rates
+//     // rhs_fn(time,y_perturbed,g_perturbed,data);
+//     // data->computeRates(time,data->CONSTANTS,g_perturbed,y_perturbed,data->ALGEBRAIC);
+//     computeRates( time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset );
+//     for (int i = 0; i < num_of_states; ++i) {
+//       jac[i][j] = (g_perturbed[i] - g0[i]) / (epsilon); // dg/dy = ( g(y(i+1)) - g(y(i)) ) / ( epsilon * y(i) ) 
+//     }
+//   }
 
+// }
+
+// __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, int offset){
+//   // Initialize solution
+//   const int num_of_states = 49;
+//   double y[num_of_states] = {0}; 
+//   double y_new[num_of_states] = {0};
+//   double F[num_of_states] = {0}; 
+//   double delta[num_of_states] = {0};
+
+//   for (int i = 0; i < num_of_states; ++i) {
+//       y[i] = STATES[(num_of_states * offset) + i];
+//   }
+//   if (offset == 0 )printf("input states to y\n");
+//   // Newton-Raphson method variables
+//   double **Jc = new double*[num_of_states]; //jacobian
+//   double Jcf[num_of_states * num_of_states] = {0};  // flatten of Jc
+
+//   for (int i = 0; i < num_of_states; i++){
+//     Jc[i] = new double[num_of_states];
+//   }
+
+//   if (offset == 0)printf("newton raphson done\n");
+//   // Initial guess
+//   for (int i = 0; i < num_of_states; ++i) {
+//     y_new[i] = y[i]; // Initial guess
+//   }
+//   // Newton-Raphson iterations
+//   for (int iter = 0; iter < 10000; ++iter) { 
+//     // rhs_fn(time,y_new,F,data);
+//     // computeRates(time,data->CONSTANTS,F,y_new,data->ALGEBRAIC);
+//     computeRates(time,CONSTANTS,F,y_new,ALGEBRAIC, offset);
+//     for (int i = 0; i < num_of_states; ++i) {
+//       F[i] = y_new[i] - y[i] - dt * F[i];
+//     }
+//     // jacobian(y_new, J); // or use numericalJacobian(y_new, J)
+//     // numericalJacobian(time,y_new,Jc,epsilon,data); 
+//     numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
+
+//     for (int i = 0; i < num_of_states; ++i) {
+//       for (int j = 0; j < num_of_states; ++j) {
+//         Jcf[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i][j];
+//       }
+//     }
+    
+//     ___gaussElimination(Jcf,F,delta,num_of_states);
+//     if (offset == 0)printf("gauss in newton raphson loop\n");
+//     for (int i = 0; i < num_of_states; ++i) {
+//       y_new[i] -= delta[i];
+//     }
+//     double norm = 0.0;
+//     for (int i = 0; i < num_of_states; i++){
+//       norm = norm + delta[i] * delta[i];
+//     }
+//     norm = sqrt(norm);
+//     if (norm < epsilon){
+//       break;
+//     }   
+//     // if (iter == 999){
+//     //   std::cout << "BDF1 max iteration exceeded!\n";
+//     // }
+//   }
+//   for (int i = 0; i < num_of_states; i++){
+//     STATES[(num_of_states * offset) + i] = y_new[i];
+//   }
+//   for (int i = 0; i < num_of_states; i++){
+//     delete[] Jc[i];
+//   }
+//   delete[] Jc;
+// }
+
+
+__device__ void numericalJacobian(double time, double *y, double *jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset) {
+    const int num_of_states = 49;
+
+    double g0[num_of_states]; // to store rates
+    computeRates(time, CONSTANTS, g0, y, ALGEBRAIC, offset);
+
+    for (int j = 0; j < num_of_states; ++j) {
+        double y_perturbed[num_of_states];
+        for (int k = 0; k < num_of_states; ++k) {
+            y_perturbed[k] = y[k];
+        }
+        y_perturbed[j] += epsilon; // Perturb y[j]
+
+        double g_perturbed[num_of_states]; // to store perturbed rates
+        computeRates(time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset);
+
+        for (int i = 0; i < num_of_states; ++i) {
+            jac[i * num_of_states + j] = (g_perturbed[i] - g0[i]) / epsilon; // Flattened Jacobian
+        }
+    }
 }
 
-__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, int offset){
-  // Initialize solution
-  const int num_of_states = 49;
-  double y[num_of_states] = {0}; 
-  double y_new[num_of_states] = {0};
-  double F[num_of_states] = {0}; 
-  double delta[num_of_states] = {0};
 
-  for (int i = 0; i < num_of_states; ++i) {
-      y[i] = STATES[(num_of_states * offset) + i];
-  }
-  if (offset == 0 )printf("input states to y\n");
-  // Newton-Raphson method variables
-  // double **Jc = new double*[num_of_states]; //jacobian
-  thrust::device_vector<double> Jc(num_of_states * num_of_states, 0.0);
-  double Jcf[num_of_states * num_of_states] = {0};  // flatten of Jc
+// Helper function to perform Gaussian elimination
+__device__ void ___gaussElimination(double *Jcf, double *F, double *delta, int num_of_states);
 
-  for (int i = 0; i < num_of_states; i++){
-    Jc[i] = new double[num_of_states];
-  }
+__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, int offset) {
+    const int num_of_states = 49;
 
-  if (offset == 0)printf("newton raphson done\n");
-  // Initial guess
-  for (int i = 0; i < num_of_states; ++i) {
-    y_new[i] = y[i]; // Initial guess
-  }
-  // Newton-Raphson iterations
-  for (int iter = 0; iter < 10000; ++iter) { 
-    // rhs_fn(time,y_new,F,data);
-    // computeRates(time,data->CONSTANTS,F,y_new,data->ALGEBRAIC);
-    computeRates(time,CONSTANTS,F,y_new,ALGEBRAIC, offset);
+    double y[num_of_states];
+    double y_new[num_of_states];
+    double F[num_of_states];
+    double delta[num_of_states];
+
+    // Initialize y with STATES
     for (int i = 0; i < num_of_states; ++i) {
-      F[i] = y_new[i] - y[i] - dt * F[i];
+        y[i] = STATES[(num_of_states * offset) + i];
+        y_new[i] = y[i]; // Initial guess
     }
-    // jacobian(y_new, J); // or use numericalJacobian(y_new, J)
-    // numericalJacobian(time,y_new,Jc,epsilon,data); 
-    numericalJacobian(time, y_new, thrust::raw_pointer_cast(Jc.data()), epsilon, CONSTANTS, ALGEBRAIC, offset);
 
-    for (int i = 0; i < num_of_states; ++i) {
-      for (int j = 0; j < num_of_states; ++j) {
-        Jcf[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i][j];
-      }
+    // Initialize thrust::device_vector for Jacobian matrix
+    thrust::device_vector<double> Jc(num_of_states * num_of_states, 0.0);
+
+    for (int iter = 0; iter < 10000; ++iter) {
+        // Compute rates
+        computeRates(time, CONSTANTS, F, y_new, ALGEBRAIC, offset);
+
+        // Update F for Newton-Raphson
+        for (int i = 0; i < num_of_states; ++i) {
+            F[i] = y_new[i] - y[i] - dt * F[i];
+        }
+
+        // Calculate numerical Jacobian
+        numericalJacobian(time, y_new, thrust::raw_pointer_cast(Jc.data()), epsilon, CONSTANTS, ALGEBRAIC, offset);
+
+        // Flatten Jc and adjust for Newton-Raphson method
+        for (int i = 0; i < num_of_states; ++i) {
+            for (int j = 0; j < num_of_states; ++j) {
+                Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
+            }
+        }
+
+        // Solve the system of linear equations using Gaussian elimination
+        ___gaussElimination(thrust::raw_pointer_cast(Jc.data()), F, delta, num_of_states);
+
+        // Update solution y_new
+        double norm = 0.0;
+        for (int i = 0; i < num_of_states; i++) {
+            y_new[i] -= delta[i];
+            norm += delta[i] * delta[i];
+        }
+        norm = sqrt(norm);
+
+        // Check for convergence
+        if (norm < epsilon) {
+            break;
+        }
     }
-    
-    ___gaussElimination(Jcf,F,delta,num_of_states);
-    if (offset == 0)printf("gauss in newton raphson loop\n");
-    for (int i = 0; i < num_of_states; ++i) {
-      y_new[i] -= delta[i];
+
+    // Update STATES with the new solution
+    for (int i = 0; i < num_of_states; i++) {
+        STATES[(num_of_states * offset) + i] = y_new[i];
     }
-    double norm = 0.0;
-    for (int i = 0; i < num_of_states; i++){
-      norm = norm + delta[i] * delta[i];
-    }
-    norm = sqrt(norm);
-    if (norm < epsilon){
-      break;
-    }   
-    // if (iter == 999){
-    //   std::cout << "BDF1 max iteration exceeded!\n";
-    // }
-  }
-  for (int i = 0; i < num_of_states; i++){
-    STATES[(num_of_states * offset) + i] = y_new[i];
-  }
-  for (int i = 0; i < num_of_states; i++){
-    delete[] Jc[i];
-  }
-  delete[] Jc;
 }
