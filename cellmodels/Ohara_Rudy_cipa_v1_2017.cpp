@@ -1410,3 +1410,88 @@ __device__ double set_time_step (double TIME, double time_point, double max_time
 //   }
 // }
 
+__device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset){
+  int num_of_states = 49;
+
+  Cellmodel* data = (Cellmodel*)user_data;
+  double g0[num_of_states]; // to store rates
+  // rhs_fn(time,y,g0,data);
+  // data->computeRates(time,data->CONSTANTS,g0,y,data->ALGEBRAIC); 
+  computeRates( time, CONSTANTS, g0, y, ALGEBRAIC, offset )
+  for (int j = 0; j < num_of_states; ++j) {
+    double y_perturbed[num_of_states];
+    for (int k = 0; k < num_of_states; ++k) {
+        y_perturbed[k] = y[k];
+    }
+    y_perturbed[j] += epsilon; // y(i+1) - y(i) = epsilon * y(i)
+    double g_perturbed[num_of_states]; // to store rates
+    // rhs_fn(time,y_perturbed,g_perturbed,data);
+    // data->computeRates(time,data->CONSTANTS,g_perturbed,y_perturbed,data->ALGEBRAIC);
+    computeRates( time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset )
+    for (int i = 0; i < num_of_states; ++i) {
+      jac[i][j] = (g_perturbed[i] - g0[i]) / (epsilon); // dg/dy = ( g(y(i+1)) - g(y(i)) ) / ( epsilon * y(i) ) 
+    }
+  }
+
+}
+
+__device__ void solveBDF1(double time, double dt, double epsilon, void* user_data){
+  // Initialize solution
+  int num_of_states = 49;
+
+  Cellmodel* data = (Cellmodel*)user_data;
+  double y[num_of_states];
+  double y_new[num_of_states];
+  for (int i = 0; i < num_of_states; ++i) {
+      y[i] = data->STATES[i];
+  }
+  // Newton-Raphson method variables
+  double F[num_of_states];
+  double **Jc = new double*[num_of_states];
+  double Jcf[num_of_states * num_of_states]; // flatten of Jc
+  for (int i = 0; i < num_of_states; i++){
+    Jc[i] = new double[num_of_states];
+  }
+  double delta[num_of_states];
+  // Initial guess
+  for (int i = 0; i < num_of_states; ++i) {
+    y_new[i] = y[i]; // Initial guess
+  }
+  // Newton-Raphson iterations
+  for (int iter = 0; iter < 10000; ++iter) { 
+    // rhs_fn(time,y_new,F,data);
+    data->computeRates(time,data->CONSTANTS,F,y_new,data->ALGEBRAIC);
+    for (int i = 0; i < num_of_states; ++i) {
+      F[i] = y_new[i] - y[i] - dt * F[i];
+    }
+    // jacobian(y_new, J); // or use numericalJacobian(y_new, J)
+    numericalJacobian(time,y_new,Jc,epsilon,data);
+    for (int i = 0; i < num_of_states; ++i) {
+      for (int j = 0; j < num_of_states; ++j) {
+        Jcf[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i][j];
+      }
+    }
+    data->gaussElimination(Jcf,F,delta,num_of_states);
+    for (int i = 0; i < num_of_states; ++i) {
+      y_new[i] -= delta[i];
+    }
+    double norm = 0.0;
+    for (int i = 0; i < num_of_states; i++){
+      norm = norm + delta[i] * delta[i];
+    }
+    norm = sqrt(norm);
+    if (norm < epsilon){
+      break;
+    }   
+    // if (iter == 999){
+    //   std::cout << "BDF1 max iteration exceeded!\n";
+    // }
+  }
+  for (int i = 0; i < num_of_states; i++){
+    data->STATES[i] = y_new[i];
+  }
+  for (int i = 0; i < num_of_states; i++){
+    delete[] Jc[i];
+  }
+  delete[] Jc;
+}

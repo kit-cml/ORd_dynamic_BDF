@@ -8,4 +8,4 @@ Use_Conductance_Variability = 0    // 1: read additional file which contain indi
 Pace_Find_Steepest = 5  // timing to start searching steepest dvdtrepol (ex. last 250 pacing).
 Drug_Name = bepridil
 Concentrations = 99.0
-GPU_Index = 0 
+GPU_Index = 1 
