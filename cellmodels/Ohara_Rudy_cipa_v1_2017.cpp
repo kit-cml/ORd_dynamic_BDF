@@ -1411,9 +1411,9 @@ __device__ double set_time_step (double TIME, double time_point, double max_time
 // }
 
 __device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset){
-  int num_of_states = 49;
+  int num_of_states = 49
+  int num_of_
 
-  Cellmodel* data = (Cellmodel*)user_data;
   double g0[num_of_states]; // to store rates
   // rhs_fn(time,y,g0,data);
   // data->computeRates(time,data->CONSTANTS,g0,y,data->ALGEBRAIC); 
@@ -1435,15 +1435,14 @@ __device__ void numericalJacobian(double time, double *y, double **jac, double e
 
 }
 
-__device__ void solveBDF1(double time, double dt, double epsilon, void* user_data){
+__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, int offset){
   // Initialize solution
   int num_of_states = 49;
 
-  Cellmodel* data = (Cellmodel*)user_data;
   double y[num_of_states];
   double y_new[num_of_states];
   for (int i = 0; i < num_of_states; ++i) {
-      y[i] = data->STATES[i];
+      y[i] = STATES[(num_of_states * offset) + i];
   }
   // Newton-Raphson method variables
   double F[num_of_states];
@@ -1460,18 +1459,22 @@ __device__ void solveBDF1(double time, double dt, double epsilon, void* user_dat
   // Newton-Raphson iterations
   for (int iter = 0; iter < 10000; ++iter) { 
     // rhs_fn(time,y_new,F,data);
-    data->computeRates(time,data->CONSTANTS,F,y_new,data->ALGEBRAIC);
+    // computeRates(time,data->CONSTANTS,F,y_new,data->ALGEBRAIC);
+    computeRates(time,CONSTANTS,F,y_new,ALGEBRAIC);
     for (int i = 0; i < num_of_states; ++i) {
       F[i] = y_new[i] - y[i] - dt * F[i];
     }
     // jacobian(y_new, J); // or use numericalJacobian(y_new, J)
-    numericalJacobian(time,y_new,Jc,epsilon,data);
+    // numericalJacobian(time,y_new,Jc,epsilon,data); 
+    numericalJacobian(time, y_new, Jc, epsilon, *CONSTANTS, *ALGEBRAIC, offset);
+
     for (int i = 0; i < num_of_states; ++i) {
       for (int j = 0; j < num_of_states; ++j) {
         Jcf[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i][j];
       }
     }
-    data->gaussElimination(Jcf,F,delta,num_of_states);
+    
+    ___gaussElimination(Jcf,F,delta,num_of_states);
     for (int i = 0; i < num_of_states; ++i) {
       y_new[i] -= delta[i];
     }
@@ -1488,7 +1491,7 @@ __device__ void solveBDF1(double time, double dt, double epsilon, void* user_dat
     // }
   }
   for (int i = 0; i < num_of_states; i++){
-    data->STATES[i] = y_new[i];
+    STATES[(num_of_states * offset) + i] = y_new[i];
   }
   for (int i = 0; i < num_of_states; i++){
     delete[] Jc[i];
