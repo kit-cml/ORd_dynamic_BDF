@@ -1411,13 +1411,12 @@ __device__ double set_time_step (double TIME, double time_point, double max_time
 // }
 
 __device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset){
-  int num_of_states = 49
-  int num_of_
+  const int num_of_states = 49;
 
   double g0[num_of_states]; // to store rates
   // rhs_fn(time,y,g0,data);
   // data->computeRates(time,data->CONSTANTS,g0,y,data->ALGEBRAIC); 
-  computeRates( time, CONSTANTS, g0, y, ALGEBRAIC, offset )
+  computeRates( time, CONSTANTS, g0, y, ALGEBRAIC, offset );
   for (int j = 0; j < num_of_states; ++j) {
     double y_perturbed[num_of_states];
     for (int k = 0; k < num_of_states; ++k) {
@@ -1427,7 +1426,7 @@ __device__ void numericalJacobian(double time, double *y, double **jac, double e
     double g_perturbed[num_of_states]; // to store rates
     // rhs_fn(time,y_perturbed,g_perturbed,data);
     // data->computeRates(time,data->CONSTANTS,g_perturbed,y_perturbed,data->ALGEBRAIC);
-    computeRates( time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset )
+    computeRates( time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset );
     for (int i = 0; i < num_of_states; ++i) {
       jac[i][j] = (g_perturbed[i] - g0[i]) / (epsilon); // dg/dy = ( g(y(i+1)) - g(y(i)) ) / ( epsilon * y(i) ) 
     }
@@ -1437,7 +1436,7 @@ __device__ void numericalJacobian(double time, double *y, double **jac, double e
 
 __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, int offset){
   // Initialize solution
-  int num_of_states = 49;
+  const int num_of_states = 49;
 
   double y[num_of_states];
   double y_new[num_of_states];
@@ -1460,13 +1459,13 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
   for (int iter = 0; iter < 10000; ++iter) { 
     // rhs_fn(time,y_new,F,data);
     // computeRates(time,data->CONSTANTS,F,y_new,data->ALGEBRAIC);
-    computeRates(time,CONSTANTS,F,y_new,ALGEBRAIC);
+    computeRates(time,CONSTANTS,F,y_new,ALGEBRAIC, offset);
     for (int i = 0; i < num_of_states; ++i) {
       F[i] = y_new[i] - y[i] - dt * F[i];
     }
     // jacobian(y_new, J); // or use numericalJacobian(y_new, J)
     // numericalJacobian(time,y_new,Jc,epsilon,data); 
-    numericalJacobian(time, y_new, Jc, epsilon, *CONSTANTS, *ALGEBRAIC, offset);
+    numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
 
     for (int i = 0; i < num_of_states; ++i) {
       for (int j = 0; j < num_of_states; ++j) {
