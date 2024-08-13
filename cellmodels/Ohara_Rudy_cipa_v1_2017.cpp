@@ -1411,6 +1411,9 @@ __device__ double set_time_step (double TIME, double time_point, double max_time
 //   }
 // }
 
+
+
+
 // __device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset){
 //   const int num_of_states = 49;
 
@@ -1505,6 +1508,98 @@ __device__ double set_time_step (double TIME, double time_point, double max_time
 // }
 
 
+
+
+
+// //  using vectors
+
+// __device__ void numericalJacobian(double time, double *y, double *jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset) {
+//     const int num_of_states = 49;
+
+//     double g0[num_of_states]; // to store rates
+//     computeRates(time, CONSTANTS, g0, y, ALGEBRAIC, offset);
+
+//     for (int j = 0; j < num_of_states; ++j) {
+//         double y_perturbed[num_of_states];
+//         for (int k = 0; k < num_of_states; ++k) {
+//             y_perturbed[k] = y[k];
+//         }
+//         y_perturbed[j] += epsilon; // Perturb y[j]
+
+//         double g_perturbed[num_of_states]; // to store perturbed rates
+//         computeRates(time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset);
+
+//         for (int i = 0; i < num_of_states; ++i) {
+//             jac[i * num_of_states + j] = (g_perturbed[i] - g0[i]) / epsilon; // Flattened Jacobian
+//         }
+//     }
+// }
+
+// // Helper function to perform Gaussian elimination
+// __device__ void ___gaussElimination(double *Jcf, double *F, double *delta, int num_of_states);
+
+// __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, int offset) {
+//     const int num_of_states = 49;
+
+//     double y[num_of_states];
+//     double y_new[num_of_states];
+//     double F[num_of_states];
+//     double delta[num_of_states];
+
+//     // Initialize y with STATES
+//     for (int i = 0; i < num_of_states; ++i) {
+//         y[i] = STATES[(num_of_states * offset) + i];
+//         y_new[i] = y[i]; // Initial guess
+//     }
+
+//     // Initialize thrust::device_vector for Jacobian matrix
+//     thrust::device_vector<double> Jc(num_of_states * num_of_states, 0.0);
+
+//     for (int iter = 0; iter < 10000; ++iter) {
+//         // Compute rates
+//         computeRates(time, CONSTANTS, F, y_new, ALGEBRAIC, offset);
+
+//         // Update F for Newton-Raphson
+//         for (int i = 0; i < num_of_states; ++i) {
+//             F[i] = y_new[i] - y[i] - dt * F[i];
+//         }
+
+//         // Calculate numerical Jacobian
+//         numericalJacobian(time, y_new, thrust::raw_pointer_cast(Jc.data()), epsilon, CONSTANTS, ALGEBRAIC, offset);
+
+//         // Flatten Jc and adjust for Newton-Raphson method
+//         for (int i = 0; i < num_of_states; ++i) {
+//             for (int j = 0; j < num_of_states; ++j) {
+//                 Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
+//             }
+//         }
+
+//         // Solve the system of linear equations using Gaussian elimination
+//         ___gaussElimination(thrust::raw_pointer_cast(Jc.data()), F, delta, num_of_states);
+
+//         // Update solution y_new
+//         double norm = 0.0;
+//         for (int i = 0; i < num_of_states; i++) {
+//             y_new[i] -= delta[i];
+//             norm += delta[i] * delta[i];
+//         }
+//         norm = sqrt(norm);
+
+//         // Check for convergence
+//         if (norm < epsilon) {
+//             break;
+//         }
+//     }
+
+//     // Update STATES with the new solution
+//     for (int i = 0; i < num_of_states; i++) {
+//         STATES[(num_of_states * offset) + i] = y_new[i];
+//     }
+// }
+
+
+
+
 __device__ void numericalJacobian(double time, double *y, double *jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset) {
     const int num_of_states = 49;
 
@@ -1527,10 +1622,6 @@ __device__ void numericalJacobian(double time, double *y, double *jac, double ep
     }
 }
 
-
-// Helper function to perform Gaussian elimination
-__device__ void ___gaussElimination(double *Jcf, double *F, double *delta, int num_of_states);
-
 __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, int offset) {
     const int num_of_states = 49;
 
@@ -1544,10 +1635,17 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
         y[i] = STATES[(num_of_states * offset) + i];
         y_new[i] = y[i]; // Initial guess
     }
+    //  if (offset == 0 )printf("input states to y\n");
 
-    // Initialize thrust::device_vector for Jacobian matrix
-    thrust::device_vector<double> Jc(num_of_states * num_of_states, 0.0);
-
+    // Allocate memory for Jacobian matrix on device
+    double *Jc;
+    size_t Jc_size = num_of_states * num_of_states * sizeof(double);
+    cudaError_t err = cudaMalloc(&Jc, Jc_size);
+    if (err != cudaSuccess) {
+        printf("Failed to allocate memory for Jacobian matrix (error code %s)!\n", cudaGetErrorString(err));
+        //return;
+    }
+    //  if (offset == 0 )printf("Allocate jacobian\n");
     for (int iter = 0; iter < 10000; ++iter) {
         // Compute rates
         computeRates(time, CONSTANTS, F, y_new, ALGEBRAIC, offset);
@@ -1558,7 +1656,8 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
         }
 
         // Calculate numerical Jacobian
-        numericalJacobian(time, y_new, thrust::raw_pointer_cast(Jc.data()), epsilon, CONSTANTS, ALGEBRAIC, offset);
+        numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
+        // if (offset == 0 )printf("call jacobian numerical\n");
 
         // Flatten Jc and adjust for Newton-Raphson method
         for (int i = 0; i < num_of_states; ++i) {
@@ -1566,17 +1665,20 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
                 Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
             }
         }
+        //  if (offset == 0 )printf("flatten jc\n");
 
         // Solve the system of linear equations using Gaussian elimination
-        ___gaussElimination(thrust::raw_pointer_cast(Jc.data()), F, delta, num_of_states);
+        ___gaussElimination(Jc, F, delta, num_of_states);
+        //  if (offset == 0 )printf("Gauss elemination\n");
 
-        // Update solution y_new
+        //
         double norm = 0.0;
         for (int i = 0; i < num_of_states; i++) {
             y_new[i] -= delta[i];
             norm += delta[i] * delta[i];
         }
         norm = sqrt(norm);
+        // if (offset == 0 )printf("Update solution y_new\n");
 
         // Check for convergence
         if (norm < epsilon) {
@@ -1588,4 +1690,7 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
     for (int i = 0; i < num_of_states; i++) {
         STATES[(num_of_states * offset) + i] = y_new[i];
     }
+
+    // Free the allocated memory for the Jacobian matrix
+    cudaFree(Jc);
 }

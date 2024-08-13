@@ -500,7 +500,7 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
     const double inet_vm_threshold = p_param->inet_vm_threshold;
     // const unsigned short pace_max = 300;
     // const unsigned short pace_max = 1000;
-    const unsigned short pace_max = 2;
+    const unsigned short pace_max = 10;
     // const unsigned short celltype = 0.;
     // const unsigned short last_pace_print = 3;
     // const unsigned short last_drug_check_pace = 250;
@@ -701,7 +701,8 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
           // writen = false;
         }
         
-        solveAnalytical(d_CONSTANTS, d_STATES, d_ALGEBRAIC, d_RATES,  dt[sample_id], sample_id);
+        // solveAnalytical(d_CONSTANTS, d_STATES, d_ALGEBRAIC, d_RATES,  dt[sample_id], sample_id);
+        solveBDF1(tcurr[sample_id], dt[sample_id], epsilon, d_CONSTANTS, d_STATES, d_ALGEBRAIC, sample_id);
         if( temp_result[sample_id].dvmdt_max < d_RATES[(sample_id * num_of_states)+V] )temp_result[sample_id].dvmdt_max = d_RATES[(sample_id * num_of_states)+V];
           
           // this part should be
