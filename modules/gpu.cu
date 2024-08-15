@@ -500,7 +500,7 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
     const double inet_vm_threshold = p_param->inet_vm_threshold;
     // const unsigned short pace_max = 300;
     // const unsigned short pace_max = 1000;
-    const unsigned short pace_max = 5;
+    const unsigned short pace_max = 2;
     // const unsigned short celltype = 0.;
     // const unsigned short last_pace_print = 3;
     // const unsigned short last_drug_check_pace = 250;
