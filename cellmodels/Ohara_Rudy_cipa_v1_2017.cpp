@@ -1621,44 +1621,151 @@ __device__ void numericalJacobian(double time, double *y, double *jac, double ep
         }
     }
 }
+// // without shared memory
+// __global__ void numericalJacobianKernel(double time, double *y, double *jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset) {
+//     int j = blockIdx.x * blockDim.x + threadIdx.x;
+//     int i = blockIdx.y * blockDim.y + threadIdx.y;
+//     const int num_of_states = 49;
 
-__global__ void numericalJacobianKernel(double time, double *y, double *jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int offset) {
+//     if (i < num_of_states && j < num_of_states) {
+//         // Allocate g0 and g_perturbed in shared memory if appropriate, or on the stack but within the kernel
+//         double g0[49]; // assuming num_of_states = 49
+//         double g_perturbed[49];
+
+//         computeRates(time, CONSTANTS, g0, y, ALGEBRAIC, offset);
+
+//         // Allocate y_perturbed in shared memory or ensure it stays within the kernel's scope
+//         double y_perturbed[49];
+//         for (int k = 0; k < num_of_states; ++k) {
+//             y_perturbed[k] = y[k];
+//         }
+//         y_perturbed[j] += epsilon; // Perturb y[j]
+
+//         computeRates(time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset);
+
+//         jac[i * num_of_states + j] = (g_perturbed[i] - g0[i]) / epsilon;
+//     }
+// }
+
+// with shared memory
+__global__ void numericalJacobianKernel(double time, double *y, double *jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, int num_of_states, int offset) {
+    __shared__ double shared_y[49];  // Assuming num_of_states = 49
+
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     int i = blockIdx.y * blockDim.y + threadIdx.y;
-    const int num_of_states = 49;
 
     if (i < num_of_states && j < num_of_states) {
-        double g0[49]; // Assuming num_of_states = 49
-        computeRates(time, CONSTANTS, g0, y, ALGEBRAIC, offset);
+        if (threadIdx.x < num_of_states) {
+            shared_y[threadIdx.x] = y[threadIdx.x];
+        }
+        __syncthreads();
+
+        double g0[49];
+        double g_perturbed[49];
+
+        computeRates(time, CONSTANTS, g0, shared_y, ALGEBRAIC, offset);
 
         double y_perturbed[49];
         for (int k = 0; k < num_of_states; ++k) {
-            y_perturbed[k] = y[k];
+            y_perturbed[k] = shared_y[k];
         }
         y_perturbed[j] += epsilon; // Perturb y[j]
 
-        double g_perturbed[49];
         computeRates(time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset);
 
         jac[i * num_of_states + j] = (g_perturbed[i] - g0[i]) / epsilon;
     }
 }
 
-// // without jacobian optimisation
+
+
+// without jacobian optimisation
+__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, int offset) {
+    const int num_of_states = 49;
+
+    double y[num_of_states];
+    double y_new[num_of_states];
+    double F[num_of_states];
+    double delta[num_of_states];
+
+    // Initialize y with STATES
+    for (int i = 0; i < num_of_states; ++i) {
+        y[i] = STATES[(num_of_states * offset) + i];
+        y_new[i] = y[i]; // Initial guess
+    }
+
+    // Allocate memory for Jacobian matrix on device
+    double *Jc;
+    size_t Jc_size = num_of_states * num_of_states * sizeof(float);
+    cudaError_t err = cudaMalloc(&Jc, Jc_size);
+    if (err != cudaSuccess) {
+        printf("Failed to allocate memory for Jacobian matrix (error code %s)!\n", cudaGetErrorString(err));
+        //return;
+    }
+    //  if (offset == 0 )printf("Allocate jacobian\n");
+    for (int iter = 0; iter < 10000; ++iter) {
+        // Compute rates
+        computeRates(time, CONSTANTS, F, y_new, ALGEBRAIC, offset);
+
+        // Update F for Newton-Raphson
+        for (int i = 0; i < num_of_states; ++i) {
+            F[i] = y_new[i] - y[i] - dt * F[i];
+        }
+
+        // Calculate numerical Jacobian
+        numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
+        // if (offset == 0 )printf("call jacobian numerical\n");
+
+        // Flatten Jc and adjust for Newton-Raphson method
+        for (int i = 0; i < num_of_states; ++i) {
+            for (int j = 0; j < num_of_states; ++j) {
+                Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
+            }
+        }
+        //  if (offset == 0 )printf("flatten jc\n");
+
+        // Solve the system of linear equations using Gaussian elimination
+        ___gaussElimination(Jc, F, delta, num_of_states);
+        //  if (offset == 0 )printf("Gauss elemination\n");
+
+        //
+        double norm = 0.0;
+        for (int i = 0; i < num_of_states; i++) {
+            y_new[i] -= delta[i];
+            norm += delta[i] * delta[i];
+        }
+        norm = sqrt(norm);
+        // if (offset == 0 )printf("Update solution y_new\n");
+
+        // Check for convergence
+        if (norm < epsilon) {
+            break;
+        }
+    }
+
+    // Update STATES with the new solution
+    for (int i = 0; i < num_of_states; i++) {
+        STATES[(num_of_states * offset) + i] = y_new[i];
+    }
+
+    // Free the allocated memory for the Jacobian matrix
+    cudaFree(Jc);
+}
+
+// // with jacobian matrix as gpu kernel
 // __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, int offset) {
 //     const int num_of_states = 49;
 
-//     double y[num_of_states];
-//     double y_new[num_of_states];
-//     double F[num_of_states];
-//     double delta[num_of_states];
+//     double y[49];
+//     double y_new[49];
+//     double F[49];
+//     double delta[49];
 
 //     // Initialize y with STATES
 //     for (int i = 0; i < num_of_states; ++i) {
 //         y[i] = STATES[(num_of_states * offset) + i];
-//         y_new[i] = y[i]; // Initial guess
+//         y_new[i] = y[i];
 //     }
-//     //  if (offset == 0 )printf("input states to y\n");
 
 //     // Allocate memory for Jacobian matrix on device
 //     double *Jc;
@@ -1666,115 +1773,45 @@ __global__ void numericalJacobianKernel(double time, double *y, double *jac, dou
 //     cudaError_t err = cudaMalloc(&Jc, Jc_size);
 //     if (err != cudaSuccess) {
 //         printf("Failed to allocate memory for Jacobian matrix (error code %s)!\n", cudaGetErrorString(err));
-//         //return;
 //     }
-//     //  if (offset == 0 )printf("Allocate jacobian\n");
+
+//     dim3 threadsPerBlock(16, 16);
+//     dim3 numBlocks((num_of_states + threadsPerBlock.x - 1) / threadsPerBlock.x,
+//                    (num_of_states + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
 //     for (int iter = 0; iter < 10000; ++iter) {
-//         // Compute rates
 //         computeRates(time, CONSTANTS, F, y_new, ALGEBRAIC, offset);
 
-//         // Update F for Newton-Raphson
 //         for (int i = 0; i < num_of_states; ++i) {
 //             F[i] = y_new[i] - y[i] - dt * F[i];
 //         }
 
-//         // Calculate numerical Jacobian
-//         numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
-//         // if (offset == 0 )printf("call jacobian numerical\n");
+//         // Launch numericalJacobianKernel from the device function
+//         numericalJacobianKernel<<<numBlocks, threadsPerBlock>>>(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
 
-//         // Flatten Jc and adjust for Newton-Raphson method
 //         for (int i = 0; i < num_of_states; ++i) {
 //             for (int j = 0; j < num_of_states; ++j) {
 //                 Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
 //             }
 //         }
-//         //  if (offset == 0 )printf("flatten jc\n");
 
-//         // Solve the system of linear equations using Gaussian elimination
 //         ___gaussElimination(Jc, F, delta, num_of_states);
-//         //  if (offset == 0 )printf("Gauss elemination\n");
 
-//         //
 //         double norm = 0.0;
 //         for (int i = 0; i < num_of_states; i++) {
 //             y_new[i] -= delta[i];
 //             norm += delta[i] * delta[i];
 //         }
 //         norm = sqrt(norm);
-//         // if (offset == 0 )printf("Update solution y_new\n");
 
-//         // Check for convergence
 //         if (norm < epsilon) {
 //             break;
 //         }
 //     }
 
-//     // Update STATES with the new solution
 //     for (int i = 0; i < num_of_states; i++) {
 //         STATES[(num_of_states * offset) + i] = y_new[i];
 //     }
 
-//     // Free the allocated memory for the Jacobian matrix
 //     cudaFree(Jc);
 // }
-
-
-__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, int offset) {
-    const int num_of_states = 49;
-
-    double y[49];
-    double y_new[49];
-    double F[49];
-    double delta[49];
-
-    // Initialize y with STATES
-    for (int i = 0; i < num_of_states; ++i) {
-        y[i] = STATES[(num_of_states * offset) + i];
-        y_new[i] = y[i];
-    }
-
-    // Allocate memory for Jacobian matrix on device
-    double *Jc;
-    size_t Jc_size = num_of_states * num_of_states * sizeof(double);
-    cudaMalloc(&Jc, Jc_size);
-
-    dim3 threadsPerBlock(16, 16);
-    dim3 numBlocks((num_of_states + threadsPerBlock.x - 1) / threadsPerBlock.x,
-                   (num_of_states + threadsPerBlock.y - 1) / threadsPerBlock.y);
-
-    for (int iter = 0; iter < 10000; ++iter) {
-        computeRates(time, CONSTANTS, F, y_new, ALGEBRAIC, offset);
-
-        for (int i = 0; i < num_of_states; ++i) {
-            F[i] = y_new[i] - y[i] - dt * F[i];
-        }
-
-        // Launch numericalJacobianKernel from the device function
-        numericalJacobianKernel<<<numBlocks, threadsPerBlock>>>(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, offset);
-
-        for (int i = 0; i < num_of_states; ++i) {
-            for (int j = 0; j < num_of_states; ++j) {
-                Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
-            }
-        }
-
-        ___gaussElimination(Jc, F, delta, num_of_states);
-
-        double norm = 0.0;
-        for (int i = 0; i < num_of_states; i++) {
-            y_new[i] -= delta[i];
-            norm += delta[i] * delta[i];
-        }
-        norm = sqrt(norm);
-
-        if (norm < epsilon) {
-            break;
-        }
-    }
-
-    for (int i = 0; i < num_of_states; i++) {
-        STATES[(num_of_states * offset) + i] = y_new[i];
-    }
-
-    cudaFree(Jc);
-}
