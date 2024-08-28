@@ -1254,7 +1254,7 @@ __device__ void solveAnalytical(double *CONSTANTS, double *STATES, double *ALGEB
 //}
 }
 
-__device__ void ___gaussElimination(double *A, double *b, double *x, int N) {
+__device__ void ___gaussElimination(double *A, double *b, double *x, int N, int offset) { // we need to add offset because *A is actually Jc, 
         // Using A as a flat array to represent an N x N matrix
     for (int i = 0; i < N; i++) {
         // Search for maximum in this column
@@ -1605,21 +1605,22 @@ __device__ void numericalJacobian(double time, double *y, double *jac, double ep
                                 int offset) {
 
     const int num_of_states = 49;
+    int jc_offset = num_of_states * num_of_states * offset;
     
     computeRates(time, CONSTANTS, g0, y, ALGEBRAIC, offset);
 
     for (int j = 0; j < num_of_states; ++j) {
         
         for (int k = 0; k < num_of_states; ++k) {
-            y_perturbed[k] = y[(num_of_states * offset) + k];
+            y_perturbed[(num_of_states * offset) + k] = y[(num_of_states * offset) + k];
         }
-        y_perturbed[j] += epsilon; // Perturb y[j]
+        y_perturbed[(num_of_states * offset) + j] += epsilon; // Perturb y[j]
 
         
         computeRates(time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset);
 
         for (int i = 0; i < num_of_states; ++i) {
-            jac[i * num_of_states + j] = (g_perturbed[i] - g0[i]) / epsilon; // Flattened Jacobian
+            jac[i * num_of_states + j + jc_offset] = (g_perturbed[(num_of_states * offset) + i] - g0[(num_of_states * offset) + i]) / epsilon; // Flattened Jacobian
         }
     }
 }
@@ -1716,16 +1717,18 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
         numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, y_perturbed, g0, g_perturbed, offset);
         // if (offset == 0 )printf("call jacobian numerical\n");
 
+        int jc_offset = num_of_states * num_of_states * offset;
+
         // Flatten Jc and adjust for Newton-Raphson method
         for (int i = 0; i < num_of_states; ++i) {
             for (int j = 0; j < num_of_states; ++j) {
-                Jc[i * num_of_states + j] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j];
+                Jc[i * num_of_states + j + jc_offset] = (i == j ? 1.0 : 0.0) - dt * Jc[i * num_of_states + j + jc_offset];
             }
         }
         //  if (offset == 0 )printf("flatten jc\n");
 
         // Solve the system of linear equations using Gaussian elimination
-        ___gaussElimination(Jc, F, delta, num_of_states);
+        ___gaussElimination(Jc, F, delta, num_of_states, offset);
         //  if (offset == 0 )printf("Gauss elemination\n");
 
         //
@@ -1745,11 +1748,11 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
 
     // Update STATES with the new solution
     for (int i = 0; i < num_of_states; i++) {
-        STATES[(num_of_states * offset) + i] = y_new[i];
+        STATES[(num_of_states * offset) + i] = y_new[(num_of_states * offset) + i];
     }
 
     // Free the allocated memory for the Jacobian matrix
-    cudaFree(Jc);
+    // cudaFree(Jc);
 }
 
 // // with jacobian matrix as gpu kernel
