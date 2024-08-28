@@ -1209,7 +1209,7 @@ __device__ void solveAnalytical(double *CONSTANTS, double *STATES, double *ALGEB
   for(int i = 0; i < m; i++){
     x[i] = 0.0;
   }
-  ___gaussElimination(a,b,x,m); // gpu capable?
+  ___gaussElimination(a,b,x,m,offset); // gpu capable?
   STATES[(states_size * offset) + IC1] = x[0];
   STATES[(states_size * offset) + IC2] = x[1];
   STATES[(states_size * offset) + C1] = x[2];

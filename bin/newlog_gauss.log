@@ -1,0 +1,13 @@
+recompile
+Clean.
+rm -rf *.o bin/drug_sim
+rm -rf **/*.o
+nvcc -x cu  -I/usr/local/cuda/include -dc -arch=sm_86 -o cellmodels/Ohara_Rudy_cipa_v1_2017.o cellmodels/Ohara_Rudy_cipa_v1_2017.cpp
+cellmodels/Ohara_Rudy_cipa_v1_2017.cpp(1212): error: too few arguments in function call
+    ___gaussElimination(a,b,x,m);
+                               ^
+
+1 error detected in the compilation of "cellmodels/Ohara_Rudy_cipa_v1_2017.cpp".
+make: *** [Makefile:75: cellmodels/Ohara_Rudy_cipa_v1_2017.o] Error 2
+run in-silico
+./run_insilico_postpro.sh: line 14: ./drug_sim: No such file or directory
