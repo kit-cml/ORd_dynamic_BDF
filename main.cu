@@ -355,7 +355,7 @@ int main(int argc, char **argv)
           // "./result/66_00.csv"
           // // "./drugs/optimized_pop_10k.csv"
           // );
-          int cache_num = get_init_data_from_file(p_param->cache_file,cache);  //
+          int cache_num = get_init_data_from_file(p_param->cache_file,cache); 
 
           printf("Found cache for %d samples\n",cache_num);
           // note to self:
@@ -384,6 +384,18 @@ int main(int argc, char **argv)
         cudaMalloc(&d_STATES, num_of_states * sample_size * sizeof(double));
         cudaMalloc(&d_STATES_cache, (num_of_states+2) * sample_size * sizeof(double));
         cudaMalloc(&d_p_param,  sizeof(param_t));
+
+        // for BDF
+        double *y; double *y_new; double *F; double *delta; 
+        double *y_perturbed; double *g0; double *g_perturbed; 
+        cudaMalloc(&y, num_of_states * sample_size * sizeof(double));
+        cudaMalloc(&y_new, num_of_states * sample_size * sizeof(double));
+        cudaMalloc(&F, num_of_states * sample_size * sizeof(double));
+        cudaMalloc(&delta, num_of_states * sample_size * sizeof(double));
+
+        cudaMalloc(&y_perturbed, num_of_states * sample_size * sizeof(double));
+        cudaMalloc(&g0, num_of_states * sample_size * sizeof(double));
+        cudaMalloc(&g_perturbed, num_of_states * sample_size * sizeof(double));
 
         double *time;
         double *dt;
@@ -459,7 +471,8 @@ int main(int argc, char **argv)
                                                   ik1,
                                                   sample_size,
                                                   temp_result, cipa_result,
-                                                  d_p_param
+                                                  d_p_param,
+                                                  y, y_new, F, delta, y_perturbed, g0, g_perturbed
                                                   );
                                           //block per grid, threads per block
         // endwin();
@@ -722,6 +735,19 @@ int main(int argc, char **argv)
       cudaMalloc(&d_RATES, num_of_rates * sample_size * sizeof(double));
       cudaMalloc(&d_STATES, num_of_states * sample_size * sizeof(double));
 
+
+      // for BDF
+      double *y; double *y_new; double *F; double *delta; 
+      double *y_perturbed; double *g0; double *g_perturbed; 
+      cudaMalloc(&y, num_of_states * sample_size * sizeof(double));
+      cudaMalloc(&y_new, num_of_states * sample_size * sizeof(double));
+      cudaMalloc(&F, num_of_states * sample_size * sizeof(double));
+      cudaMalloc(&delta, num_of_states * sample_size * sizeof(double));
+
+      cudaMalloc(&y_perturbed, num_of_states * sample_size * sizeof(double));
+      cudaMalloc(&g0, num_of_states * sample_size * sizeof(double));
+      cudaMalloc(&g_perturbed, num_of_states * sample_size * sizeof(double));
+
       cudaMalloc(&d_p_param,  sizeof(param_t));
 
       // prep for 1 cycle plus a bit (7000 * sample_size)
@@ -779,7 +805,8 @@ int main(int argc, char **argv)
                                                 ik1,
                                                 sample_size,
                                                 temp_result, cipa_result,
-                                                d_p_param
+                                                d_p_param,
+                                                y, y_new, F, delta, y_perturbed, g0, g_perturbed
                                                 );
                                         //block per grid, threads per block
       // endwin();
