@@ -128,8 +128,6 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 
     tmax = pace_max * bcl;
     int pace_count = 0;
-
-    printf("Core %d:\n",sample_id);
     
   
     // printf("%d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
@@ -141,10 +139,10 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
         
         dt_set = set_time_step( tcurr[sample_id], time_point, max_time_step, d_CONSTANTS, d_RATES, sample_id); 
         
-        printf("tcurr at core %d: %lf\n",sample_id,tcurr[sample_id]);
+        // printf("tcurr at core %d: %lf\n",sample_id,tcurr[sample_id]);
         if (floor((tcurr[sample_id] + dt_set) / bcl) == floor(tcurr[sample_id] / bcl)) { 
           dt[sample_id] = dt_set;
-          printf("dt : %lf\n",dt_set);
+          // printf("dt : %lf\n",dt_set);
           // it goes in here, but it does not, you know, adds the pace, 
         }
         else{
@@ -157,7 +155,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
             temp_result[sample_id].vm_dia = d_STATES[(sample_id * num_of_states) +V];
             temp_result[sample_id].ca_dia = d_STATES[(sample_id * num_of_states) +cai];
 
-              printf("inside first else : %d\n",sample_id);
+              // printf("inside first else : %d\n",sample_id);
             if( temp_result[sample_id].dvmdt_repol > cipa_result[sample_id].dvmdt_repol ) {
               pace_steepest = pace_count;
               // printf("Steepest pace updated: %d dvmdt_repol: %lf\n",pace_steepest,temp_result[sample_id].dvmdt_repol);
@@ -854,7 +852,7 @@ __global__ void kernel_DrugSimulation(double *d_ic50, double *d_cvar, double *d_
     // cipa_t cipa_per_sample[2000];
     // printf("in\n");
     if (p_param->is_time_series == 0){
-    printf("Calculating %d\n",thread_id);
+    // printf("Calculating %d\n",thread_id);
     kernel_DoDrugSim(d_ic50, d_cvar, d_CONSTANTS, d_STATES, d_RATES, d_ALGEBRAIC, 
                           d_STATES_RESULT, d_all_states, d_herg,
                           time_for_each_sample, dt_for_each_sample, thread_id, sample_size,
