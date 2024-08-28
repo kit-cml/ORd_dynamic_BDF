@@ -1254,48 +1254,52 @@ __device__ void solveAnalytical(double *CONSTANTS, double *STATES, double *ALGEB
 //}
 }
 
-__device__ void ___gaussElimination(double *A, double *b, double *x, int N, int offset) { // we need to add offset because *A is actually Jc, 
+__device__ void ___gaussElimination(double *A, double *b, double *x, int N, int offset) { 
         // Using A as a flat array to represent an N x N matrix
+        
+        // we need to add offset because *A is actually Jc, *b is actually F, *x is actually delta
+        int jc_offset = 49 * 49 * offset;
+
     for (int i = 0; i < N; i++) {
         // Search for maximum in this column
-        double maxEl = fabs(A[i*N + i]);
+        double maxEl = fabs(A[i*N + i + jc_offset]);
         int maxRow = i;
         for (int k = i + 1; k < N; k++) {
-            if (fabs(A[k*N + i]) > maxEl) {
-                maxEl = fabs(A[k*N + i]);
+            if (fabs(A[k*N + i + jc_offset]) > maxEl) {
+                maxEl = fabs(A[k*N + i + jc_offset]);
                 maxRow = k;
             }
         }
 
         // Swap maximum row with current row (column by column)
         for (int k = i; k < N; k++) {
-            double tmp = A[maxRow*N + k];
-            A[maxRow*N + k] = A[i*N + k];
-            A[i*N + k] = tmp;
+            double tmp = A[maxRow*N + k + jc_offset];
+            A[maxRow*N + k + jc_offset] = A[i*N + k + jc_offset];
+            A[i*N + k + jc_offset] = tmp;
         }
-        double tmp = b[maxRow];
-        b[maxRow] = b[i];
-        b[i] = tmp;
+        double tmp = b[(49*offset) + maxRow];
+        b[(49*offset) + maxRow] = b[(49*offset) + i];
+        b[(49*offset) + i] = tmp;
 
         // Make all rows below this one 0 in current column
         for (int k = i + 1; k < N; k++) {
-            double c = -A[k*N + i] / A[i*N + i];
+            double c = -A[k*N + i + jc_offset] / A[i*N + i + jc_offset];
             for (int j = i; j < N; j++) {
                 if (i == j) {
-                    A[k*N + j] = 0;
+                    A[k*N + j + jc_offset] = 0;
                 } else {
-                    A[k*N + j] += c * A[i*N + j];
+                    A[k*N + j + jc_offset] += c * A[i*N + j + jc_offset];
                 }
             }
-            b[k] += c * b[i];
+            b[(49*offset) + k] += c * b[(49*offset) + i];
         }
     }
 
     // Solve equation Ax=b for an upper triangular matrix A
     for (int i = N - 1; i >= 0; i--) {
-        x[i] = b[i] / A[i*N + i];
+        x[(49*offset) + i] = b[(49*offset) + i] / A[i*N + i + jc_offset];
         for (int k = i - 1; k >= 0; k--) {
-            b[k] -= A[k*N + i] * x[i];
+            b[(49*offset) + k] -= A[k*N + i] * x[(49*offset) + i];
         }
     }
 }
