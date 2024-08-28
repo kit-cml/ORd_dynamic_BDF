@@ -1683,7 +1683,7 @@ __device__ void numericalJacobian(double time, double *y, double *jac, double ep
 
 // without jacobian optimisation
 __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS, double *STATES, double *ALGEBRAIC, 
-                        double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed,
+                        double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed,
                         int offset) {
 
     const int num_of_states = 49;
@@ -1694,14 +1694,14 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
         y_new[(num_of_states * offset) + i] = y[(num_of_states * offset) + i]; // Initial guess
     }
 
-    // Allocate memory for Jacobian matrix on device
-    double *Jc;
-    size_t Jc_size = num_of_states * num_of_states * sizeof(float);
-    cudaError_t err = cudaMalloc(&Jc, Jc_size);
-    if (err != cudaSuccess) {
-        printf("Failed to allocate memory for Jacobian matrix (error code %s)!\n", cudaGetErrorString(err));
-        //return;
-    }
+    // Allocate memory for Jacobian matrix on device -> moved to CPU
+    // double *Jc;
+    // size_t Jc_size = num_of_states * num_of_states * sizeof(float);
+    // cudaError_t err = cudaMalloc(&Jc, Jc_size);
+    // if (err != cudaSuccess) {
+    //     printf("Failed to allocate memory for Jacobian matrix (error code %s)!\n", cudaGetErrorString(err));
+    //     //return;
+    // }
     //  if (offset == 0 )printf("Allocate jacobian\n");
     for (int iter = 0; iter < 10000; ++iter) {
         // Compute rates

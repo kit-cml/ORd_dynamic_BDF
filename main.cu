@@ -386,12 +386,13 @@ int main(int argc, char **argv)
         cudaMalloc(&d_p_param,  sizeof(param_t));
 
         // for BDF
-        double *y; double *y_new; double *F; double *delta; 
+        double *y; double *y_new; double *F; double *delta; double *Jc; 
         double *y_perturbed; double *g0; double *g_perturbed; 
         cudaMalloc(&y, num_of_states * sample_size * sizeof(double));
         cudaMalloc(&y_new, num_of_states * sample_size * sizeof(double));
         cudaMalloc(&F, num_of_states * sample_size * sizeof(double));
         cudaMalloc(&delta, num_of_states * sample_size * sizeof(double));
+        cudaMalloc(&Jc, num_of_states * num_of_states * sample_size * sizeof(double));
 
         cudaMalloc(&y_perturbed, num_of_states * sample_size * sizeof(double));
         cudaMalloc(&g0, num_of_states * sample_size * sizeof(double));
@@ -472,7 +473,7 @@ int main(int argc, char **argv)
                                                   sample_size,
                                                   temp_result, cipa_result,
                                                   d_p_param,
-                                                  y, y_new, F, delta, y_perturbed, g0, g_perturbed
+                                                  y, y_new, F, delta,Jc, y_perturbed, g0, g_perturbed
                                                   );
                                           //block per grid, threads per block
         // endwin();
@@ -737,12 +738,13 @@ int main(int argc, char **argv)
 
 
       // for BDF
-      double *y; double *y_new; double *F; double *delta; 
+      double *y; double *y_new; double *F; double *delta; double *Jc; 
       double *y_perturbed; double *g0; double *g_perturbed; 
       cudaMalloc(&y, num_of_states * sample_size * sizeof(double));
       cudaMalloc(&y_new, num_of_states * sample_size * sizeof(double));
       cudaMalloc(&F, num_of_states * sample_size * sizeof(double));
       cudaMalloc(&delta, num_of_states * sample_size * sizeof(double));
+      cudaMalloc(&Jc, num_of_states * num_of_states * sample_size * sizeof(double));
 
       cudaMalloc(&y_perturbed, num_of_states * sample_size * sizeof(double));
       cudaMalloc(&g0, num_of_states * sample_size * sizeof(double));
@@ -806,7 +808,7 @@ int main(int argc, char **argv)
                                                 sample_size,
                                                 temp_result, cipa_result,
                                                 d_p_param,
-                                                y, y_new, F, delta, y_perturbed, g0, g_perturbed
+                                                y, y_new, F, delta, Jc, y_perturbed, g0, g_perturbed
                                                 );
                                         //block per grid, threads per block
       // endwin();

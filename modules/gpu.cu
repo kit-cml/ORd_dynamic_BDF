@@ -21,7 +21,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
                                        double *tcurr, double *dt, unsigned short sample_id, unsigned int sample_size,
                                        cipa_t *temp_result, cipa_t *cipa_result,
                                        param_t *p_param,
-                                       double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed
+                                       double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed
                                        )
     {
     
@@ -225,7 +225,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
           // writen = false;
         }
       
-        solveBDF1(tcurr[sample_id], dt[sample_id], epsilon, d_CONSTANTS, d_STATES, d_ALGEBRAIC, y, y_new, F, delta, y_perturbed, g0, g_perturbed, sample_id);
+        solveBDF1(tcurr[sample_id], dt[sample_id], epsilon, d_CONSTANTS, d_STATES, d_ALGEBRAIC, y, y_new, F, delta, Jc, y_perturbed, g0, g_perturbed, sample_id);
        
         // begin the last 250 pace operations
 
@@ -349,7 +349,7 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
                                        double *tcurr, double *dt, unsigned short sample_id, unsigned int sample_size,
                                        cipa_t *temp_result, cipa_t *cipa_result,
                                        param_t *p_param,
-                                       double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed
+                                       double *y, double *y_new, double *F, double *delta, double* Jc, double *y_perturbed, double *g0, double *g_perturbed
                                        )
     {
     
@@ -629,7 +629,7 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
         }
         
         // solveAnalytical(d_CONSTANTS, d_STATES, d_ALGEBRAIC, d_RATES,  dt[sample_id], sample_id);
-        solveBDF1(tcurr[sample_id], dt[sample_id], epsilon, d_CONSTANTS, d_STATES, d_ALGEBRAIC, y, y_new, F, delta, y_perturbed, g0, g_perturbed, sample_id);
+        solveBDF1(tcurr[sample_id], dt[sample_id], epsilon, d_CONSTANTS, d_STATES, d_ALGEBRAIC, y, y_new, F, delta, Jc, y_perturbed, g0, g_perturbed, sample_id);
         
         if( temp_result[sample_id].dvmdt_max < d_RATES[(sample_id * num_of_states)+V] )temp_result[sample_id].dvmdt_max = d_RATES[(sample_id * num_of_states)+V];
           
@@ -841,7 +841,7 @@ __global__ void kernel_DrugSimulation(double *d_ic50, double *d_cvar, double *d_
                                       unsigned int sample_size,
                                       cipa_t *temp_result, cipa_t *cipa_result,
                                       param_t *p_param,
-                                      double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed
+                                      double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed
                                       )
   {
     unsigned short thread_id;
@@ -858,7 +858,7 @@ __global__ void kernel_DrugSimulation(double *d_ic50, double *d_cvar, double *d_
                           time_for_each_sample, dt_for_each_sample, thread_id, sample_size,
                           temp_result, cipa_result,
                           p_param,
-                          y, y_new, F, delta, y_perturbed, g0, g_perturbed
+                          y, y_new, F, delta, Jc, y_perturbed, g0, g_perturbed
                           );
     
     }
@@ -873,7 +873,7 @@ __global__ void kernel_DrugSimulation(double *d_ic50, double *d_cvar, double *d_
                           time_for_each_sample, dt_for_each_sample, thread_id, sample_size,
                           temp_result, cipa_result,
                           p_param,
-                          y, y_new, F, delta, y_perturbed, g0, g_perturbed
+                          y, y_new, F, delta, Jc, y_perturbed, g0, g_perturbed
                           );
     }
                           // __syncthreads();

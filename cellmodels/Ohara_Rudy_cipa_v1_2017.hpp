@@ -40,7 +40,7 @@
 	__device__ void ___applyHERGBinding(double *CONSTANTS, double *STATES, double conc, double *herg, int offset);
 	__device__ void ___gaussElimination(double *A, double *b, double *x, int N);
 	__device__ void numericalJacobian(double time, double *y, double **jac, double epsilon, double *CONSTANTS, double *ALGEBRAIC, double *y_perturbed, double *g0, double *g_perturbed, int offset);
-	__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed, int offset);
+	__device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTANTS,double *STATES, double *ALGEBRAIC, double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed, int offset);
 
 #endif
 

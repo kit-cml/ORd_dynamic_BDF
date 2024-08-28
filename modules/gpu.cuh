@@ -14,7 +14,7 @@ __global__ void kernel_DrugSimulation(double *d_ic50, double *d_cvar, double *d_
                                       unsigned int sample_size,
                                       cipa_t *temp_result, cipa_t *cipa_result,
                                       param_t *p_param,
-                                       double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed
+                                       double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed
                                       );
 
 __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONSTANTS, double *d_STATES, double *d_RATES, double *d_ALGEBRAIC, 
@@ -22,7 +22,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
                                        double *tcurr, double *dt, unsigned short sample_id, unsigned int sample_size,
                                        cipa_t *temp_result, cipa_t *cipa_result,
                                        param_t *p_param,
-                                        double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed
+                                        double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed
                                        );
 
 __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *d_CONSTANTS, double *d_STATES, double *d_STATES_cache, double *d_RATES, double *d_ALGEBRAIC, 
@@ -34,7 +34,7 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
                                        double *tcurr, double *dt, unsigned short sample_id, unsigned int sample_size,
                                        cipa_t *temp_result, cipa_t *cipa_result,
                                        param_t *p_param,
-                                       double *y, double *y_new, double *F, double *delta, double *y_perturbed, double *g0, double *g_perturbed
+                                       double *y, double *y_new, double *F, double *delta, double *Jc, double *y_perturbed, double *g0, double *g_perturbed
                                        );
 
 
