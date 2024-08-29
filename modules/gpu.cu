@@ -135,6 +135,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 
     while (tcurr[sample_id]<tmax)
     {
+        printf("%d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
         computeRates(tcurr[sample_id], d_CONSTANTS, d_RATES, d_STATES, d_ALGEBRAIC, sample_id); 
         
         dt_set = set_time_step( tcurr[sample_id], time_point, max_time_step, d_CONSTANTS, d_RATES, sample_id); 
@@ -329,7 +330,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 		    } // end the last 250 pace operations
         tcurr[sample_id] = tcurr[sample_id] + dt[sample_id];
         if(sample_id==0){
-          printf("t after addition: %lf\n", tcurr[sample_id]);
+          // printf("t after addition: %lf\n", tcurr[sample_id]);
         }
         
        
