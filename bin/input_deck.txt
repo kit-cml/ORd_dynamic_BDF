@@ -1,4 +1,4 @@
-Basic_Cycle_Length = 1000
+Basic_Cycle_Length = 300
 Number_of_Pacing = 2
 Simulation_Mode = 0
 Celltype = 0     // 0: endo, 1: epi, 2: M
