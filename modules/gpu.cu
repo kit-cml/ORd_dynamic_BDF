@@ -231,16 +231,16 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 
         if (pace_count >= pace_max-last_drug_check_pace)
         {
-          // printf("last 250 ops, pace: %d\n", pace_count);
-			    // Find peak vm around 2 msecs and  40 msecs after stimulation
-			    // and when the sodium current reach 0
-          // new codes start here
-          // printf("a: %d, b: %d, c: %d, eligible ap: %d\n",
-          // tcurr[sample_id] > ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+2)),
-          // tcurr[sample_id] < ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+10)),
-          // abs(d_ALGEBRAIC[(sample_id * num_of_algebraic) +INa]) < 1,
-          // is_eligible_AP
-          // );
+          printf("last 250 ops, pace: %d\n", pace_count);
+			    Find peak vm around 2 msecs and  40 msecs after stimulation
+			    and when the sodium current reach 0
+          new codes start here
+          printf("a: %d, b: %d, c: %d, eligible ap: %d\n",
+          tcurr[sample_id] > ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+2)),
+          tcurr[sample_id] < ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+10)),
+          abs(d_ALGEBRAIC[(sample_id * num_of_algebraic) +INa]) < 1,
+          is_eligible_AP
+          );
           
 			    if( tcurr[sample_id] > ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+2)) && 
 				      tcurr[sample_id] < ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+10)) && 

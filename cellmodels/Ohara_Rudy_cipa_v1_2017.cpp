@@ -1620,7 +1620,6 @@ __device__ void numericalJacobian(double time, double *y, double *jac, double ep
         }
         y_perturbed[(num_of_states * offset) + j] += epsilon; // Perturb y[j]
 
-        
         computeRates(time, CONSTANTS, g_perturbed, y_perturbed, ALGEBRAIC, offset);
 
         for (int i = 0; i < num_of_states; ++i) {
