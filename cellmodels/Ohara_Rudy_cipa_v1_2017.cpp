@@ -1299,7 +1299,7 @@ __device__ void ___gaussElimination(double *A, double *b, double *x, int N, int 
     for (int i = N - 1; i >= 0; i--) {
         x[(49*offset) + i] = b[(49*offset) + i] / A[i*N + i + jc_offset];
         for (int k = i - 1; k >= 0; k--) {
-            b[(49*offset) + k] -= A[k*N + i] * x[(49*offset) + i];
+            b[(49*offset) + k] -= A[k*N + i + jc_offset] * x[(49*offset) + i];
         }
     }
 }
@@ -1691,6 +1691,7 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
                         int offset) {
 
     const int num_of_states = 49;
+    int jc_offset = num_of_states * num_of_states * offset;
 
     // Initialize y with STATES
     for (int i = 0; i < num_of_states; ++i) {
@@ -1719,8 +1720,6 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
         // Calculate numerical Jacobian
         numericalJacobian(time, y_new, Jc, epsilon, CONSTANTS, ALGEBRAIC, y_perturbed, g0, g_perturbed, offset);
         // if (offset == 0 )printf("call jacobian numerical\n");
-
-        int jc_offset = num_of_states * num_of_states * offset;
 
         // Flatten Jc and adjust for Newton-Raphson method
         for (int i = 0; i < num_of_states; ++i) {
