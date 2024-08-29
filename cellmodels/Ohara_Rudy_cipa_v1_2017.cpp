@@ -1737,8 +1737,8 @@ __device__ void solveBDF1(double time, double dt, double epsilon, double *CONSTA
         //
         double norm = 0.0;
         for (int i = 0; i < num_of_states; i++) {
-            y_new[i] -= delta[i];
-            norm += delta[i] * delta[i];
+            y_new[(num_of_states * offset) + i] -= delta[(num_of_states * offset) + i];
+            norm += delta[(num_of_states * offset) + i] * delta[(num_of_states * offset) + i];
         }
         norm = sqrt(norm);
         // if (offset == 0 )printf("Update solution y_new\n");
