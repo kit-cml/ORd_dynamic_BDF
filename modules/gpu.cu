@@ -135,7 +135,9 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 
     while (tcurr[sample_id]<tmax)
     {
+        if(sample_id==0 || sample_id == 1000 || sample_id == 2000 || sample_id == 3000 || sample_id == 4000 || sample_id == 5000 || sample_id == 6000 || sample_id == 7000 || sample_id == 8000 || sample_id == 9000 ){
         printf("%d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
+        }
         computeRates(tcurr[sample_id], d_CONSTANTS, d_RATES, d_STATES, d_ALGEBRAIC, sample_id); 
         
         dt_set = set_time_step( tcurr[sample_id], time_point, max_time_step, d_CONSTANTS, d_RATES, sample_id); 
@@ -232,16 +234,16 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 
         if (pace_count >= pace_max-last_drug_check_pace)
         {
-          printf("last 250 ops, pace: %d\n", pace_count);
+          // printf("last 250 ops, pace: %d\n", pace_count);
 			    // // Find peak vm around 2 msecs and  40 msecs after stimulation
 			    // // and when the sodium current reach 0
           // // new codes start here
-          printf("a: %d, b: %d, c: %d, eligible ap: %d\n",
-          tcurr[sample_id] > ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+2)),
-          tcurr[sample_id] < ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+10)),
-          abs(d_ALGEBRAIC[(sample_id * num_of_algebraic) +INa]) < 1,
-          is_eligible_AP
-          );
+          // printf("a: %d, b: %d, c: %d, eligible ap: %d\n",
+          // tcurr[sample_id] > ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+2)),
+          // tcurr[sample_id] < ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+10)),
+          // abs(d_ALGEBRAIC[(sample_id * num_of_algebraic) +INa]) < 1,
+          // is_eligible_AP
+          // );
           
 			    if( tcurr[sample_id] > ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+2)) && 
 				      tcurr[sample_id] < ((d_CONSTANTS[(sample_id * num_of_constants) +BCL]*pace_count)+(d_CONSTANTS[(sample_id * num_of_constants) +stim_start]+10)) && 
@@ -292,7 +294,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
             for(counter=0; counter<num_of_states; counter++){
               d_all_states[(sample_id * num_of_states) + counter + (sample_size * (pace_count - last_drug_check_pace))] = d_STATES[(sample_id * num_of_states) + counter];
               // d_all_states[(sample_id * num_of_states) + counter] = d_STATES[(sample_id * num_of_states) + counter];
-              printf("%lf\n", d_all_states[(sample_id * num_of_states) + counter]);
+              // printf("%lf\n", d_all_states[(sample_id * num_of_states) + counter]);
             }
           
           }
@@ -310,7 +312,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 
             temp_result[sample_id].dvmdt_data[cipa_datapoint] = d_RATES[(sample_id * num_of_rates) +V];
             temp_result[sample_id].dvmdt_time[cipa_datapoint] = tcurr[sample_id];
-            printf("init_states caputed: %d\n", init_states_captured); //cache file
+            // printf("init_states caputed: %d\n", init_states_captured); //cache file
             if(init_states_captured == false){
               printf("writinggg\n"); //cache file
               int counter;
