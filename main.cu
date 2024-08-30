@@ -874,6 +874,7 @@ int main(int argc, char **argv)
           // h_states[(sample_id * num_of_states+1) + num_of_states+1]
           // );
           fprintf(writer,"%.5f\n", h_states[(sample_id * (num_of_states+1))+num_of_states] );
+          printf("%.5f\n", h_states[(sample_id * (num_of_states+1))+num_of_states] );
           // fprintf(writer, "\n");
 
         // fclose(writer);
