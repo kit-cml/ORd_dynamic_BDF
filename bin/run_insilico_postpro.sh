@@ -11,7 +11,7 @@ make clean all
 cd bin
 
 echo "run in-silico"
-"./drug_sim" -input_deck ./input_deck.txt -hill_file ./drugs/$drugname/IC50_samples10.csv -herg_file ./herg/$drugname.csv
+"./drug_sim" -input_deck ./input_deck.txt -hill_file ./drugs/$drugname/IC50_samples.csv -herg_file ./herg/$drugname.csv
 
 # echo "---------------------"
 # echo "run post-processing"

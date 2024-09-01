@@ -7,5 +7,5 @@ Is_Post_Processing = 0
 Use_Conductance_Variability = 0    // 1: read additional file which contain individual conductance variability
 Pace_Find_Steepest = 50  // timing to start searching steepest dvdtrepol (ex. last 250 pacing).
 Drug_Name = bepridil
-Concentrations = 132.00
+Concentrations = 99.00
 GPU_Index = 0
