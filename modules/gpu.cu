@@ -136,7 +136,8 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
     while (tcurr[sample_id]<tmax)
     {
         if(sample_id==0 || sample_id == 1000 || sample_id == 2000 || sample_id == 3000 || sample_id == 4000 || sample_id == 5000 || sample_id == 6000 || sample_id == 7000 || sample_id == 8000 || sample_id == 9000 ){
-        printf("core: \t %d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
+        // printf("core: \t %d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
+        printf("core: \t %d,%lf \n", sample_id,  tcurr[sample_id]);
         }
         computeRates(tcurr[sample_id], d_CONSTANTS, d_RATES, d_STATES, d_ALGEBRAIC, sample_id); 
         
@@ -269,12 +270,12 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
           {
             // printf("check 3\n");
             // printf("rates: %lf, dvmdt_repol: %lf\n states: %lf vm30: %lf, vm90: %lf\n",
-            d_RATES[(sample_id * num_of_rates) +V],
-            temp_result->dvmdt_repol, 
-            d_STATES[(sample_id * num_of_states) +V],
-            vm_repol30,
-            vm_repol90
-            );
+            // d_RATES[(sample_id * num_of_rates) +V],
+            // temp_result->dvmdt_repol, 
+            // d_STATES[(sample_id * num_of_states) +V],
+            // vm_repol30,
+            // vm_repol90
+            // );
 				    if( d_RATES[(sample_id * num_of_rates) +V] > temp_result[sample_id].dvmdt_repol &&
 					      d_STATES[(sample_id * num_of_states) +V] <= vm_repol30 &&
 					      d_STATES[(sample_id * num_of_states) +V] >= vm_repol90 )

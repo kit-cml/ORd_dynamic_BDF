@@ -279,7 +279,7 @@ int get_herg_data_from_file(const char* file_name, double *herg)
 
 int main(int argc, char **argv)
 {
-    const short gpu_spec = 20;
+    const short gpu_spec = 25;
     // for qinwards calculation
     double inal_auc_control = -90.547322;    // AUC of INaL under control model
     double ical_auc_control = -105.935067;   // AUC of ICaL under control model
