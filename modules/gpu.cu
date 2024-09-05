@@ -136,8 +136,8 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
     while (tcurr[sample_id]<tmax)
     {
         if(sample_id==0 || sample_id == 1000 || sample_id == 2000 || sample_id == 3000 || sample_id == 4000 || sample_id == 5000 || sample_id == 6000 || sample_id == 7000 || sample_id == 8000 || sample_id == 9000 ){
-        // printf("core: \t %d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
-        printf("core: \t %d,%lf \n", sample_id,  tcurr[sample_id]);
+        printf("core: \t %d,%lf,%lf,%lf,%lf\n", sample_id, dt[sample_id], tcurr[sample_id], d_STATES[V + (sample_id * num_of_states)],d_RATES[V + (sample_id * num_of_rates)]);
+        // printf("core: \t %d,%lf \n", sample_id,  tcurr[sample_id]);
         }
         computeRates(tcurr[sample_id], d_CONSTANTS, d_RATES, d_STATES, d_ALGEBRAIC, sample_id); 
         
@@ -315,7 +315,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
             temp_result[sample_id].dvmdt_time[cipa_datapoint] = tcurr[sample_id];
             // printf("init_states caputed: %d\n", init_states_captured); //cache file
             if(init_states_captured == false){
-              printf("writinggg\n"); //cache file
+              // printf("writinggg\n"); //cache file
               int counter;
               for(counter=0; counter<num_of_states; counter++){
                 d_STATES_RESULT[(sample_id * (num_of_states+1)) + counter] = d_STATES[(sample_id * num_of_states) + counter];
