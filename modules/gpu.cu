@@ -335,7 +335,7 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
         // finish if nan
         if(isnan(d_STATES[(sample_id * num_of_states) + V]) == true) {
           printf("core %d has nan, ejecting\n", sample_id);
-          return 0;
+          return;
         }
         
        
