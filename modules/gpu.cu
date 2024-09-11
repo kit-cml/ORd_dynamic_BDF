@@ -485,6 +485,9 @@ __device__ void kernel_DoDrugSim_single(double *d_ic50, double *d_cvar, double *
     // to the d_STATES and bring them back to cached initial values:
     int cnt=-1;//(0-40)
     for (int temp = 0; temp<(num_of_states+2); temp++){
+      // add guard for failing cores (by default they will stay at initConsts value or we can say, pace 1)
+      if (d_STATES_cache[(sample_id * (num_of_states+2)) + (num_of_states+1)] == 0.0) break;
+      
       if(temp!=0 && temp!=num_of_states+1){
       /// let this part as usual                        //// apply the +1 first and +1 end shifting here
       //d_STATES_RESULT[(sample_id * (num_of_states+1)) + num_of_states ] = pace_count;
