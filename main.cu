@@ -757,7 +757,7 @@ int main(int argc, char **argv)
       cudaMalloc(&cipa_result, sample_size * sizeof(cipa_t));
 
       cudaMalloc(&d_STATES_RESULT, (num_of_states+1) * sample_size * sizeof(double)); // for cache file
-      cudaMalloc(&d_all_states, num_of_states * sample_size * p_param->find_steepest_start * sizeof(double)); // for each sample 
+      // cudaMalloc(&d_all_states, num_of_states * sample_size * p_param->find_steepest_start * sizeof(double)); // for each sample -> recheck 
 
       printf("Copying sample files to GPU memory space \n");
       cudaMalloc(&d_ic50, sample_size * 14 * sizeof(double));
@@ -817,11 +817,12 @@ int main(int argc, char **argv)
       
 
       printf("allocating memory for computation result in the CPU, malloc style \n");
-      double *h_states, *h_all_states;
+      double *h_states; 
+      // double *h_all_states;
       cipa_t *h_cipa_result;
 
       h_states = (double *)malloc((num_of_states+1) * sample_size * sizeof(double)); //cache file
-      h_all_states = (double *)malloc( (num_of_states) * sample_size * p_param->find_steepest_start * sizeof(double)); //all core
+      // h_all_states = (double *)malloc( (num_of_states) * sample_size * p_param->find_steepest_start * sizeof(double)); //all core
       h_cipa_result = (cipa_t *)malloc(sample_size * sizeof(cipa_t));
       printf("...allocating for all states, all set!\n");
 
@@ -830,7 +831,7 @@ int main(int argc, char **argv)
 
       cudaMemcpy(h_cipa_result, cipa_result, sample_size * sizeof(cipa_t), cudaMemcpyDeviceToHost);
       cudaMemcpy(h_states, d_STATES_RESULT, sample_size * (num_of_states+1) *  sizeof(double), cudaMemcpyDeviceToHost);
-      cudaMemcpy(h_all_states, d_all_states, (num_of_states) * sample_size  * p_param->find_steepest_start  *  sizeof(double), cudaMemcpyDeviceToHost);
+      // cudaMemcpy(h_all_states, d_all_states, (num_of_states) * sample_size  * p_param->find_steepest_start  *  sizeof(double), cudaMemcpyDeviceToHost);
 
       FILE *writer;
       int check;

@@ -292,12 +292,13 @@ __device__ void kernel_DoDrugSim(double *d_ic50, double *d_cvar, double *d_CONST
 			    }
 
           if((pace_count >= pace_max-last_drug_check_pace) && (pace_count<pace_max) ){
-            int counter;
-            for(counter=0; counter<num_of_states; counter++){
-              d_all_states[(sample_id * num_of_states) + counter + (sample_size * (pace_count - last_drug_check_pace))] = d_STATES[(sample_id * num_of_states) + counter];
-              // d_all_states[(sample_id * num_of_states) + counter] = d_STATES[(sample_id * num_of_states) + counter];
-              // printf("%lf\n", d_all_states[(sample_id * num_of_states) + counter]);
-            }
+            // used for take notes of tracked pace (last paces), temporarily disabled, but not undeclared
+            // int counter;
+            // for(counter=0; counter<num_of_states; counter++){
+            //   d_all_states[(sample_id * num_of_states) + counter + (sample_size * (pace_count - last_drug_check_pace))] = d_STATES[(sample_id * num_of_states) + counter];
+            //   // d_all_states[(sample_id * num_of_states) + counter] = d_STATES[(sample_id * num_of_states) + counter];
+            //   // printf("%lf\n", d_all_states[(sample_id * num_of_states) + counter]);
+            // }
           
           }
 
