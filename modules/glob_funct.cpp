@@ -62,6 +62,8 @@ void edison_assign_params(int argc, char *argv[], param_t *p_param)
       strncpy(file_name, argv[idx + 1], sizeof(file_name));
     else if (!strcasecmp(argv[idx], "-hill_file"))
       strncpy(p_param->hill_file, argv[idx + 1], sizeof(p_param->hill_file));
+      else if (!strcasecmp(argv[idx], "-herg_file"))
+      strncpy(p_param->hill_file, argv[idx + 1], sizeof(p_param->herg_file));
     else if (!strcasecmp(argv[idx], "-init_file"))
       strncpy(p_param->cache_file, argv[idx + 1], sizeof(p_param->cache_file));
     // else if (!strcasecmp(argv[idx], "-cvar_file"))
