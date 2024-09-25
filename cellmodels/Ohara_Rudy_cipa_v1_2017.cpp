@@ -803,11 +803,11 @@ __device__ void ___applyHERGBinding(double *CONSTANTS, double *STATES, double co
 short constant_size = 206;
 short states_size = 49;
 if(conc > 10E-14){
-CONSTANTS[(constant_size * offset) + Kmax] = herg[(5 * offset) + 0];
-CONSTANTS[(constant_size * offset) + Ku] = herg[(5 * offset) + 1];
-CONSTANTS[(constant_size * offset) + n] = herg[(5 * offset) + 2];
-CONSTANTS[(constant_size * offset) + halfmax] = herg[(5 * offset) + 3];
-CONSTANTS[(constant_size * offset) + Vhalf] = herg[(5 * offset) + 4];
+CONSTANTS[(constant_size * offset) + Kmax] = herg[(6 * offset) + 0];
+CONSTANTS[(constant_size * offset) + Ku] = herg[(6 * offset) + 1];
+CONSTANTS[(constant_size * offset) + n] = herg[(6 * offset) + 2];
+CONSTANTS[(constant_size * offset) + halfmax] = herg[(6 * offset) + 3];
+CONSTANTS[(constant_size * offset) + Vhalf] = herg[(6 * offset) + 4];
 CONSTANTS[(constant_size * offset) + cnc] = conc;
 STATES[(states_size * offset) + D] = CONSTANTS[(constant_size * offset) + cnc];
 }

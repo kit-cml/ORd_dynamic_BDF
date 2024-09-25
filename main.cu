@@ -229,6 +229,7 @@ int get_herg_data_from_file(const char* file_name, double *herg)
   }
   idx = 0;
   int sample_size = 0;
+  printf("Herg file %s\n", file_name);
   fgets(buffer_herg, sizeof(buffer_herg), fp_herg); // skip header
   while( fgets(buffer_herg, sizeof(buffer_herg), fp_herg) != NULL )
     { // begin line reading
@@ -430,13 +431,13 @@ int main(int argc, char **argv)
         // cudaMalloc(&d_all_states, num_of_states * sample_size * p_param->find_steepest_start * sizeof(double));
         cudaMalloc(&d_ic50, sample_size * 14 * sizeof(double));  // ic50s of 7 channels 
         cudaMalloc(&d_cvar, sample_size * 18 * sizeof(double));  // conductances of 18
-        cudaMalloc(&d_herg, sample_size * 5 * sizeof(double));
+        cudaMalloc(&d_herg, sample_size * 6 * sizeof(double));
 
         printf("Copying sample files to GPU memory space \n");
         cudaMemcpy(d_STATES_cache, cache, (num_of_states+2) * sample_size * sizeof(double), cudaMemcpyHostToDevice);
         cudaMemcpy(d_ic50, ic50, sample_size * 14 * sizeof(double), cudaMemcpyHostToDevice);
         cudaMemcpy(d_cvar, cvar, sample_size * 18 * sizeof(double), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_herg, herg, sample_size * 5 * sizeof(double), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_herg, herg, sample_size * 6 * sizeof(double), cudaMemcpyHostToDevice);
         cudaMemcpy(d_p_param, p_param, sizeof(param_t), cudaMemcpyHostToDevice);
 
         // // Get the maximum number of active blocks per multiprocessor
